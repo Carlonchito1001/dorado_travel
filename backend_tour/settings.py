@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,11 +28,17 @@ SECRET_KEY = 'django-insecure-6#pqsq^j(0gusruiq5&!gt3!3&6p(z+fztkmio8tczp0qvqp-q
 DEBUG = True
 
 ALLOWED_HOSTS = []
+# ============================
+# CORS (MODO PRUEBA)
+# ============================
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,7 +64,12 @@ REST_FRAMEWORK = {
   ),
 }
 
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "authorization",
+]
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -67,6 +80,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'backend_tour.urls'
+
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 TEMPLATES = [
     {
@@ -90,10 +107,15 @@ WSGI_APPLICATION = 'backend_tour.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+  "default": {
+    "ENGINE": "django.db.backends.mysql",
+    "NAME": "dorado_travel",
+    "USER": "root",
+    "PASSWORD": "",
+    "HOST": "127.0.0.1",
+    "PORT": "3306",
+    "OPTIONS": {"init_command": "SET sql_mode='STRICT_TRANS_TABLES'"},
+  }
 }
 
 
@@ -137,3 +159,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
