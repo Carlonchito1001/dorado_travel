@@ -17,6 +17,7 @@ from .views import (
     ReservationViewSet,
     ContactMessageViewSet,
     NewsletterSubscriberViewSet,
+    CartViewSet,
     my_reservations_lookup,
     track_pageview,
     admin_dashboard,
@@ -45,18 +46,16 @@ router.register("packages", PackageViewSet, basename="packages")
 # ---- Reservas ----
 router.register("reservations", ReservationViewSet, basename="reservations")
 
+# ---- Carrito / Pago ----
+router.register("carts", CartViewSet, basename="carts")
+
 # ---- Contacto / Newsletter ----
 router.register("contact-messages", ContactMessageViewSet, basename="contact-messages")
 router.register("newsletter", NewsletterSubscriberViewSet, basename="newsletter")
 
 urlpatterns = [
-    # API REST
     path("v1/", include(router.urls)),
-
-    # Endpoints adicionales
     path("v1/my-reservations/", my_reservations_lookup, name="my-reservations"),
     path("v1/track-pageview/", track_pageview, name="track-pageview"),
-
-    # Dashboard admin
     path("v1/admin/dashboard/", admin_dashboard, name="admin-dashboard"),
 ]

@@ -1,7 +1,7 @@
 from django.db import models
 import secrets
 from django.utils import timezone
-
+from datetime import timedelta
 
 
 # ======================================================
@@ -289,6 +289,7 @@ class Reservation(Timestamped):
     full_name = models.CharField("Nombre completo", max_length=140)
     email = models.EmailField("Correo electrónico")
     phone = models.CharField("Teléfono", max_length=40, blank=True, null=True)
+    nationality = models.CharField("Nacionalidad", max_length=80, blank=True, null=True)
 
     travel_date = models.DateField("Fecha de viaje", blank=True, null=True)
     adults = models.PositiveIntegerField("Adultos", default=1)
@@ -317,6 +318,87 @@ class Reservation(Timestamped):
     class Meta:
         verbose_name = "Reserva"
         verbose_name_plural = "Reservas"
+        ordering = ["-created_at"]
+
+
+# ======================================================
+# CARRITO / ITEMS / PAGO SIMULADO
+# ======================================================
+class Cart(Timestamped):
+    STATUS = [
+        ("ABIERTO", "Abierto"),
+        ("PAGADO", "Pagado"),
+        ("EXPIRADO", "Expirado"),
+        ("CANCELADO", "Cancelado"),
+    ]
+
+    email = models.EmailField("Correo del cliente")
+    phone = models.CharField("Teléfono", max_length=40, blank=True, null=True)
+    nationality = models.CharField("Nacionalidad", max_length=80, blank=True, null=True)
+
+    status = models.CharField("Estado", max_length=12, choices=STATUS, default="ABIERTO")
+    expires_at = models.DateTimeField("Expira el", blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Carrito"
+        verbose_name_plural = "Carritos"
+        ordering = ["-created_at"]
+
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(days=3)
+        super().save(*args, **kwargs)
+
+    @property
+    def is_expired(self):
+        return self.status == "ABIERTO" and self.expires_at and timezone.now() > self.expires_at
+
+
+class CartItem(Timestamped):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
+    package = models.ForeignKey(Package, on_delete=models.PROTECT, related_name="cart_items")
+
+    reservation = models.OneToOneField(
+        Reservation,
+        on_delete=models.CASCADE,
+        related_name="cart_item",
+        blank=True,
+        null=True,
+    )
+
+    travel_date = models.DateField("Fecha de viaje", blank=True, null=True)
+    adults = models.PositiveIntegerField("Adultos", default=1)
+    children = models.PositiveIntegerField("Niños", default=0)
+
+    unit_price = models.DecimalField("Precio unitario", max_digits=10, decimal_places=2)
+    currency = models.CharField("Moneda", max_length=10, default="USD")
+
+    class Meta:
+        verbose_name = "Item de carrito"
+        verbose_name_plural = "Items de carrito"
+        ordering = ["-created_at"]
+
+    def line_total(self):
+        return self.unit_price * (self.adults + self.children)
+
+
+class Payment(Timestamped):
+    STATUS = [
+        ("PENDIENTE", "Pendiente"),
+        ("APROBADO", "Aprobado"),
+        ("RECHAZADO", "Rechazado"),
+    ]
+
+    cart = models.ForeignKey(Cart, on_delete=models.PROTECT, related_name="payments")
+    amount = models.DecimalField("Monto", max_digits=10, decimal_places=2)
+    currency = models.CharField("Moneda", max_length=10, default="USD")
+    provider = models.CharField("Proveedor", max_length=30, default="SIMULADO")
+    status = models.CharField("Estado", max_length=12, choices=STATUS, default="PENDIENTE")
+    reference = models.CharField("Referencia", max_length=60, unique=True)
+
+    class Meta:
+        verbose_name = "Pago"
+        verbose_name_plural = "Pagos"
         ordering = ["-created_at"]
 
 
